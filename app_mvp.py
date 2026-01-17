@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
-import mediapipe as mp
 import av
-import math
+import mediapipe as mp  # Import it as 'mp'
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 
@@ -200,3 +199,4 @@ st.set_page_config(page_title="Air Canvas Pro", layout="wide")
 st.title("🎨 Air Canvas Pro")
 RTC_CONFIGURATION = {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 webrtc_streamer(key="air-canvas", mode=WebRtcMode.SENDRECV, rtc_configuration=RTC_CONFIGURATION, video_processor_factory=AirCanvasProcessor, media_stream_constraints={"video": True, "audio": False}, async_processing=True)
+
