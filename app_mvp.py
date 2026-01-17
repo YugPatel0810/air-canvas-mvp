@@ -3,7 +3,7 @@ import numpy as np
 import mediapipe as mp
 import av
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, WebRtcMode
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 
 # --- Configuration ---
 FRAME_WIDTH = 1280
@@ -51,8 +51,8 @@ def detect_and_draw_shape(points, canvas, color, thickness):
         (cx, cy), radius = cv2.minEnclosingCircle(contour)
         cv2.circle(canvas, (int(cx), int(cy)), int(radius), color, thickness)
 
-# --- The Processor Class ---
-class AirCanvasProcessor(VideoTransformerBase):
+# --- The Processor Class (Corrected) ---
+class AirCanvasProcessor(VideoProcessorBase):
     def __init__(self):
         # Initialize State
         self.brushThickness = 15
@@ -85,8 +85,8 @@ class AirCanvasProcessor(VideoTransformerBase):
         cv2.rectangle(img, (CLEAR_X1, CLEAR_Y1), (CLEAR_X2, CLEAR_Y2), (80,80,80), cv2.FILLED)
         cv2.putText(img, "Clear", (CLEAR_X1+10, CLEAR_Y1+55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
 
-    def transform(self, frame):
-        # Convert Streamlit frame to OpenCV
+    # UPDATED: recv() instead of transform()
+    def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         img = frame.to_ndarray(format="bgr24")
         img = cv2.flip(img, 1)
         img = cv2.resize(img, (FRAME_WIDTH, FRAME_HEIGHT))
@@ -115,7 +115,6 @@ class AirCanvasProcessor(VideoTransformerBase):
                     
                     fingers_up = fingers.count(1)
 
-                    # Selection
                     if fingers[1] and fingers[2]:
                         if self.shapeMode and len(self.shapePoints) > 0:
                             detect_and_draw_shape(self.shapePoints, self.imgCanvas, self.currColor, active_thickness)
@@ -138,7 +137,6 @@ class AirCanvasProcessor(VideoTransformerBase):
                                 self.imgCanvas = np.zeros((FRAME_HEIGHT, FRAME_WIDTH, 3), np.uint8)
                                 self.shapePoints = []
                     
-                    # Drawing
                     elif fingers[1] and fingers_up == 1:
                         if self.shapeMode:
                             self.shapePoints.append((x1, y1))
@@ -155,7 +153,6 @@ class AirCanvasProcessor(VideoTransformerBase):
                              self.shapePoints = []
                         self.xp, self.yp = 0, 0
 
-        # Fast Merge
         imgGray = cv2.cvtColor(self.imgCanvas, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(imgGray, 10, 255, cv2.THRESH_BINARY)
         img[mask == 255] = self.imgCanvas[mask == 255]
@@ -163,13 +160,13 @@ class AirCanvasProcessor(VideoTransformerBase):
         self.draw_ui(img)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-# --- Streamlit Layout ---
 st.set_page_config(page_title="Air Canvas MVP", layout="wide")
 st.title("🎨 Air Canvas: AI Powered Drawing")
-st.write("Turn on your webcam and wait for the system to load. Stand back slightly so your hands are visible.")
+st.write("Turn on your webcam and wait. Ensure you have 'packages.txt' in your repo.")
 
+# UPDATED: video_processor_factory
 webrtc_streamer(key="air-canvas", 
                 mode=WebRtcMode.SENDRECV, 
-                video_transformer_factory=AirCanvasProcessor,
+                video_processor_factory=AirCanvasProcessor, 
                 media_stream_constraints={"video": True, "audio": False},
                 async_processing=True)
