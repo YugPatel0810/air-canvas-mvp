@@ -54,7 +54,6 @@ def detect_and_draw_shape(points, canvas, color, thickness):
 # --- Processor Class ---
 class AirCanvasProcessor(VideoProcessorBase):
     def __init__(self):
-        # State
         self.brushThickness = 15
         self.eraserThickness = 50
         self.currColor = (0, 0, 255) 
