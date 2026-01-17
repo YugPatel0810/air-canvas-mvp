@@ -3,4 +3,7 @@ streamlit-webrtc
 opencv-python-headless
 mediapipe
 numpy
+
+
 av>=10.0.0
+
